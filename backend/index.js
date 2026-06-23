@@ -2,9 +2,13 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+const companiesRouter = require("./routes/companies");
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.use("/api/companies", companiesRouter);
 
 app.get("/", (req, res) => {
   res.send("SmartERP backend running");
