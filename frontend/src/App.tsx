@@ -3,18 +3,7 @@ import { useAuth } from "./context/AuthContext";
 import { useCompany } from "./context/CompanyContext";
 import Auth from "./pages/Auth";
 import CompanySelect from "./pages/CompanySelect";
-
-function Dashboard() {
-  const { activeCompany } = useCompany();
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="text-gray-600 mt-2">
-        Active Company: {activeCompany?.name}
-      </p>
-    </div>
-  );
-}
+import Ledgers from "./pages/Ledgers";
 
 function App() {
   const { session, loading } = useAuth();
@@ -34,6 +23,10 @@ function App() {
           element={session ? <CompanySelect /> : <Navigate to="/auth" />}
         />
         <Route
+          path="/ledgers"
+          element={session && activeCompany ? <Ledgers /> : <Navigate to="/" />}
+        />
+        <Route
           path="/"
           element={
             !session ? (
@@ -41,7 +34,7 @@ function App() {
             ) : !activeCompany ? (
               <Navigate to="/select-company" />
             ) : (
-              <Dashboard />
+              <Ledgers />
             )
           }
         />

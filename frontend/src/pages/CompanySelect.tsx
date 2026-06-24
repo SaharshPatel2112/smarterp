@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useCompany } from "../context/CompanyContext";
+import { useNavigate } from "react-router-dom";
 import "./CompanySelect.css";
 
 interface Company {
@@ -57,7 +58,7 @@ export default function CompanySelect() {
   const { session } = useAuth();
   const { companies, setActiveCompany, refreshCompanies, internalUserId } =
     useCompany();
-
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [error, setError] = useState("");
@@ -171,7 +172,10 @@ export default function CompanySelect() {
             <div key={company.id} className="cs-card">
               <button
                 className="cs-card-info"
-                onClick={() => setActiveCompany(company)}
+                onClick={() => {
+                  setActiveCompany(company);
+                  navigate("/");
+                }}
               >
                 <p className="cs-card-name">{company.name}</p>
                 <p className="cs-card-meta">
