@@ -4,6 +4,8 @@ import { useCompany } from "./context/CompanyContext";
 import Auth from "./pages/Auth";
 import CompanySelect from "./pages/CompanySelect";
 import Ledgers from "./pages/Ledgers";
+import StockItems from "./pages/StockItems";
+import Layout from "./components/Layout";
 
 function App() {
   const { session, loading } = useAuth();
@@ -11,34 +13,51 @@ function App() {
 
   if (loading) return <div className="p-8">Loading...</div>;
 
+  // Not logged in
+  if (!session) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="*" element={<Auth />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  // Logged in but no company selected
+  if (!activeCompany) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="*" element={<CompanySelect />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  // Logged in + company selected — show full app with sidebar
   return (
     <BrowserRouter>
-      <Routes>
-        <Route
-          path="/auth"
-          element={session ? <Navigate to="/" /> : <Auth />}
-        />
-        <Route
-          path="/select-company"
-          element={session ? <CompanySelect /> : <Navigate to="/auth" />}
-        />
-        <Route
-          path="/ledgers"
-          element={session && activeCompany ? <Ledgers /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/"
-          element={
-            !session ? (
-              <Navigate to="/auth" />
-            ) : !activeCompany ? (
-              <Navigate to="/select-company" />
-            ) : (
-              <Ledgers />
-            )
-          }
-        />
-      </Routes>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Navigate to="/ledgers" />} />
+          <Route path="/ledgers" element={<Ledgers />} />
+          <Route path="/stock-items" element={<StockItems />} />
+          <Route
+            path="/purchase"
+            element={<div className="p-8">Purchase Voucher — Day 7</div>}
+          />
+          <Route
+            path="/sales"
+            element={<div className="p-8">Sales Voucher — Day 9</div>}
+          />
+          <Route
+            path="/reports"
+            element={<div className="p-8">Reports — Day 12</div>}
+          />
+          <Route path="*" element={<Navigate to="/ledgers" />} />
+        </Routes>
+      </Layout>
     </BrowserRouter>
   );
 }

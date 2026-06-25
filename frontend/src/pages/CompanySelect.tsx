@@ -1,8 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCompany } from "../context/CompanyContext";
-import { useNavigate } from "react-router-dom";
-import "./CompanySelect.css";
 
 interface Company {
   id: string;
@@ -53,49 +52,47 @@ const INDIA_STATES = [
 ];
 
 const today = new Date().toISOString().split("T")[0];
+const emptyForm = {
+  name: "",
+  address: "",
+  gstin: "",
+  state: "",
+  financial_year_start: "",
+  contact_info: "",
+};
+
+const inputCls =
+  "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500";
+const labelCls = "text-xs text-slate-500 block mb-1";
 
 export default function CompanySelect() {
   const { session } = useAuth();
   const { companies, setActiveCompany, refreshCompanies, internalUserId } =
     useCompany();
   const navigate = useNavigate();
+
   const [showForm, setShowForm] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [form, setForm] = useState({
-    name: "",
-    address: "",
-    gstin: "",
-    state: "",
-    financial_year_start: "",
-    contact_info: "",
-  });
-
-  const openCreateForm = () => {
+  const openCreate = () => {
     setEditingCompany(null);
-    setForm({
-      name: "",
-      address: "",
-      gstin: "",
-      state: "",
-      financial_year_start: "",
-      contact_info: "",
-    });
+    setForm(emptyForm);
     setError("");
     setShowForm(true);
   };
 
-  const openEditForm = (company: Company) => {
-    setEditingCompany(company);
+  const openEdit = (c: Company) => {
+    setEditingCompany(c);
     setForm({
-      name: company.name,
-      address: company.address || "",
-      gstin: company.gstin || "",
-      state: company.state || "",
-      financial_year_start: company.financial_year_start || "",
-      contact_info: company.contact_info || "",
+      name: c.name,
+      address: c.address || "",
+      gstin: c.gstin || "",
+      state: c.state || "",
+      financial_year_start: c.financial_year_start || "",
+      contact_info: c.contact_info || "",
     });
     setError("");
     setShowForm(true);
@@ -103,38 +100,32 @@ export default function CompanySelect() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
     if (!form.state) {
       setError("Please select a state.");
       return;
     }
-
     setLoading(true);
+    setError("");
 
     try {
-      let res;
-      if (editingCompany) {
-        res = await fetch(
-          `http://localhost:5000/api/companies/${editingCompany.id}`,
-          {
-            method: "PUT",
+      const res = editingCompany
+        ? await fetch(
+            `http://localhost:5000/api/companies/${editingCompany.id}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(form),
+            },
+          )
+        : await fetch("http://localhost:5000/api/companies", {
+            method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form),
-          },
-        );
-      } else {
-        res = await fetch("http://localhost:5000/api/companies", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, user_id: internalUserId }),
-        });
-      }
+            body: JSON.stringify({ ...form, user_id: internalUserId }),
+          });
 
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Something went wrong");
-      } else {
+      if (!res.ok) setError(data.error || "Something went wrong");
+      else {
         await refreshCompanies();
         setShowForm(false);
       }
@@ -153,45 +144,52 @@ export default function CompanySelect() {
     if (res.ok) refreshCompanies();
   };
 
+  const handleSelect = (company: Company) => {
+    setActiveCompany(company);
+    navigate("/");
+  };
+
   return (
-    <div className="cs-page">
-      <div className="cs-container">
-        <div className="cs-header">
-          <h1 className="cs-title">Select Company</h1>
-          <span className="cs-limit-note">{companies.length}/5 companies</span>
+    <div className="min-h-screen bg-slate-100 flex items-start justify-center py-12 px-4">
+      <div className="w-full max-w-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-slate-800">Select Company</h1>
+          <span className="text-xs text-slate-400">
+            {companies.length}/5 companies
+          </span>
         </div>
 
         {companies.length === 0 && !showForm && (
-          <p className="cs-empty">
+          <p className="text-slate-400 text-sm mb-4">
             No companies yet. Create one to get started.
           </p>
         )}
 
-        <div className="cs-list">
+        <div className="flex flex-col gap-3 mb-6">
           {companies.map((company) => (
-            <div key={company.id} className="cs-card">
+            <div
+              key={company.id}
+              className="bg-white border border-slate-200 rounded-xl px-5 py-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow"
+            >
               <button
-                className="cs-card-info"
-                onClick={() => {
-                  setActiveCompany(company);
-                  navigate("/");
-                }}
+                className="text-left flex-1"
+                onClick={() => handleSelect(company)}
               >
-                <p className="cs-card-name">{company.name}</p>
-                <p className="cs-card-meta">
+                <p className="font-semibold text-blue-600">{company.name}</p>
+                <p className="text-xs text-slate-400 mt-0.5">
                   {company.state} · {company.gstin || "No GSTIN"}
                 </p>
               </button>
-              <div className="cs-card-actions">
+              <div className="flex gap-2 ml-4">
                 <button
-                  className="btn-alter"
-                  onClick={() => openEditForm(company)}
+                  onClick={() => openEdit(company)}
+                  className="text-xs border border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded-md"
                 >
                   Alter
                 </button>
                 <button
-                  className="btn-delete"
                   onClick={() => handleDelete(company.id)}
+                  className="text-xs border border-red-300 text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md"
                 >
                   Delete
                 </button>
@@ -201,66 +199,81 @@ export default function CompanySelect() {
         </div>
 
         {companies.length < 5 && !showForm && (
-          <button className="btn-create" onClick={openCreateForm}>
+          <button
+            onClick={openCreate}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium"
+          >
             + Create Company
           </button>
         )}
-
         {companies.length >= 5 && (
-          <p className="cs-max-note">Maximum 5 companies reached.</p>
+          <p className="text-red-500 text-sm">Maximum 5 companies reached.</p>
         )}
 
         {showForm && (
-          <div className="cs-form-box">
-            <h2 className="cs-form-title">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 mt-6 shadow-sm">
+            <h2 className="font-bold text-slate-800 text-lg mb-5">
               {editingCompany ? "Alter Company" : "Create Company"}
             </h2>
 
-            {error && <p className="cs-error">{error}</p>}
+            {error && (
+              <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                {error}
+              </p>
+            )}
 
-            <form className="cs-form" onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label htmlFor="company_name">Company Name *</label>
+                <label htmlFor="co_name" className={labelCls}>
+                  Company Name *
+                </label>
                 <input
-                  id="company_name"
+                  id="co_name"
                   type="text"
                   placeholder="e.g. G-mart Pvt Ltd"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className={inputCls}
                   required
                 />
               </div>
-
               <div>
-                <label htmlFor="address">Address</label>
+                <label htmlFor="co_address" className={labelCls}>
+                  Address
+                </label>
                 <input
-                  id="address"
+                  id="co_address"
                   type="text"
                   placeholder="Street, City"
                   value={form.address}
                   onChange={(e) =>
                     setForm({ ...form, address: e.target.value })
                   }
+                  className={inputCls}
                 />
               </div>
-
               <div>
-                <label htmlFor="gstin">GSTIN</label>
+                <label htmlFor="co_gstin" className={labelCls}>
+                  GSTIN
+                </label>
                 <input
-                  id="gstin"
+                  id="co_gstin"
                   type="text"
                   placeholder="e.g. 24AABCU9603R1ZX"
                   value={form.gstin}
                   onChange={(e) => setForm({ ...form, gstin: e.target.value })}
+                  className={inputCls}
                 />
               </div>
-
               <div>
-                <label htmlFor="state">State *</label>
+                <label htmlFor="co_state" className={labelCls}>
+                  State *
+                </label>
                 <select
-                  id="state"
+                  id="co_state"
                   value={form.state}
                   onChange={(e) => setForm({ ...form, state: e.target.value })}
+                  className={inputCls}
                   required
                 >
                   <option value="" disabled>
@@ -273,43 +286,49 @@ export default function CompanySelect() {
                   ))}
                 </select>
               </div>
-
               <div>
-                <label htmlFor="financial_year_start">
+                <label htmlFor="co_fy" className={labelCls}>
                   Financial Year Start
                 </label>
                 <input
-                  id="financial_year_start"
+                  id="co_fy"
                   type="date"
                   value={form.financial_year_start}
                   onChange={(e) =>
                     setForm({ ...form, financial_year_start: e.target.value })
                   }
+                  className={inputCls}
                   max={today}
                 />
               </div>
-
               <div>
-                <label htmlFor="contact_info">Contact Info</label>
+                <label htmlFor="co_contact" className={labelCls}>
+                  Contact Info
+                </label>
                 <input
-                  id="contact_info"
+                  id="co_contact"
                   type="text"
                   placeholder="Phone / Email"
                   value={form.contact_info}
                   onChange={(e) =>
                     setForm({ ...form, contact_info: e.target.value })
                   }
+                  className={inputCls}
                 />
               </div>
 
-              <div className="cs-form-actions">
-                <button type="submit" className="btn-save" disabled={loading}>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                >
                   {loading ? "Saving..." : editingCompany ? "Update" : "Create"}
                 </button>
                 <button
                   type="button"
-                  className="btn-cancel"
                   onClick={() => setShowForm(false)}
+                  className="border border-slate-300 px-5 py-2 rounded-lg text-sm"
                 >
                   Cancel
                 </button>
