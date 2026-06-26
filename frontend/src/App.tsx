@@ -7,6 +7,7 @@ import Ledgers from "./pages/Ledgers";
 import StockItems from "./pages/StockItems";
 import Layout from "./components/Layout";
 import PurchaseVoucher from "./pages/PurchaseVoucher";
+import SalesVoucher from "./pages/SalesVoucher";
 
 function App() {
   const { session, loading } = useAuth();
@@ -45,10 +46,7 @@ function App() {
           <Route path="/ledgers" element={<Ledgers />} />
           <Route path="/stock-items" element={<StockItems />} />
           <Route path="/purchase" element={<PurchaseVoucher />} />
-          <Route
-            path="/sales"
-            element={<div className="p-8">Sales Voucher — Day 9</div>}
-          />
+          <Route path="/sales" element={<SalesVoucher />} />
           <Route
             path="/reports"
             element={<div className="p-8">Reports — Day 12</div>}
