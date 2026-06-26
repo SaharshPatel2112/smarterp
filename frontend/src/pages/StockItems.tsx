@@ -17,9 +17,9 @@ const emptyForm = {
   name: "",
   unit: "pcs",
   gst_rate: "0",
-  purchase_price: "0",
-  sale_price: "0",
-  opening_stock: "0",
+  purchase_price: "",
+  sale_price: "",
+  opening_stock: "",
 };
 const inputCls =
   "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500";
@@ -84,8 +84,8 @@ export default function StockItems() {
                 name: form.name,
                 unit: form.unit,
                 gst_rate: parseFloat(form.gst_rate) || 0,
-                purchase_price: parseFloat(form.purchase_price) || 0,
-                sale_price: parseFloat(form.sale_price) || 0,
+                purchase_price: parseFloat(form.purchase_price),
+                sale_price: parseFloat(form.sale_price),
               }),
             },
           )
@@ -97,9 +97,9 @@ export default function StockItems() {
               name: form.name,
               unit: form.unit,
               gst_rate: parseFloat(form.gst_rate) || 0,
-              purchase_price: parseFloat(form.purchase_price) || 0,
-              sale_price: parseFloat(form.sale_price) || 0,
-              opening_stock: parseFloat(form.opening_stock) || 0,
+              purchase_price: parseFloat(form.purchase_price),
+              sale_price: parseFloat(form.sale_price),
+              opening_stock: parseFloat(form.opening_stock),
             }),
           });
       const data = await res.json();
@@ -129,6 +129,7 @@ export default function StockItems() {
   return (
     <div className="p-8">
       <div className="max-w-5xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-slate-800">Stock Items</h1>
           <button
@@ -139,6 +140,7 @@ export default function StockItems() {
           </button>
         </div>
 
+        {/* Search */}
         <input
           type="text"
           placeholder="Search items..."
@@ -147,6 +149,152 @@ export default function StockItems() {
           className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 mb-5 bg-white"
         />
 
+        {/* Form — appears HERE between search and table */}
+        {showForm && (
+          <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+            <h2 className="font-bold text-slate-800 text-lg mb-5">
+              {editingItem ? "Edit Stock Item" : "Create Stock Item"}
+            </h2>
+            {error && (
+              <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                {error}
+              </p>
+            )}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div>
+                <label htmlFor="s_name" className={labelCls}>
+                  Item Name *
+                </label>
+                <input
+                  id="s_name"
+                  type="text"
+                  placeholder="e.g. Rice, Sugar, Pen"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className={inputCls}
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="s_unit" className={labelCls}>
+                  Unit *
+                </label>
+                <select
+                  id="s_unit"
+                  value={form.unit}
+                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                  className={inputCls}
+                  required
+                >
+                  {UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="s_gst" className={labelCls}>
+                  GST Rate (%) — optional
+                </label>
+                <select
+                  id="s_gst"
+                  value={form.gst_rate}
+                  onChange={(e) =>
+                    setForm({ ...form, gst_rate: e.target.value })
+                  }
+                  className={inputCls}
+                >
+                  {["0", "5", "12", "18", "28"].map((r) => (
+                    <option key={r} value={r}>
+                      {r}%
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="s_pp" className={labelCls}>
+                  Purchase Price (₹) *
+                </label>
+                <input
+                  id="s_pp"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 120.00"
+                  value={form.purchase_price}
+                  onChange={(e) =>
+                    setForm({ ...form, purchase_price: e.target.value })
+                  }
+                  className={`${inputCls} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="s_sp" className={labelCls}>
+                  Sale Price (₹) *
+                </label>
+                <input
+                  id="s_sp"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 150.00"
+                  value={form.sale_price}
+                  onChange={(e) =>
+                    setForm({ ...form, sale_price: e.target.value })
+                  }
+                  className={`${inputCls} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                  required
+                />
+              </div>
+
+              {!editingItem && (
+                <div>
+                  <label htmlFor="s_os" className={labelCls}>
+                    Opening Stock *
+                  </label>
+                  <input
+                    id="s_os"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 100"
+                    value={form.opening_stock}
+                    onChange={(e) =>
+                      setForm({ ...form, opening_stock: e.target.value })
+                    }
+                    className={`${inputCls} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                >
+                  {loading ? "Saving..." : editingItem ? "Update" : "Create"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="border border-slate-300 px-5 py-2 rounded-lg text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Table */}
         {filtered.length === 0 ? (
           <p className="text-slate-400 text-sm">
             {search
@@ -224,137 +372,6 @@ export default function StockItems() {
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
-
-        {showForm && (
-          <div className="bg-white border border-slate-200 rounded-xl p-6 mt-6 shadow-sm">
-            <h2 className="font-bold text-slate-800 text-lg mb-5">
-              {editingItem ? "Edit Stock Item" : "Create Stock Item"}
-            </h2>
-            {error && (
-              <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                {error}
-              </p>
-            )}
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div>
-                <label htmlFor="s_name" className={labelCls}>
-                  Item Name *
-                </label>
-                <input
-                  id="s_name"
-                  type="text"
-                  placeholder="e.g. Rice, Sugar, Pen"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className={inputCls}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="s_unit" className={labelCls}>
-                  Unit *
-                </label>
-                <select
-                  id="s_unit"
-                  value={form.unit}
-                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                  className={inputCls}
-                >
-                  {UNITS.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="s_gst" className={labelCls}>
-                  GST Rate (%)
-                </label>
-                <select
-                  id="s_gst"
-                  value={form.gst_rate}
-                  onChange={(e) =>
-                    setForm({ ...form, gst_rate: e.target.value })
-                  }
-                  className={inputCls}
-                >
-                  {["0", "5", "12", "18", "28"].map((r) => (
-                    <option key={r} value={r}>
-                      {r}%
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="s_pp" className={labelCls}>
-                  Purchase Price (₹)
-                </label>
-                <input
-                  id="s_pp"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.purchase_price}
-                  onChange={(e) =>
-                    setForm({ ...form, purchase_price: e.target.value })
-                  }
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label htmlFor="s_sp" className={labelCls}>
-                  Sale Price (₹)
-                </label>
-                <input
-                  id="s_sp"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.sale_price}
-                  onChange={(e) =>
-                    setForm({ ...form, sale_price: e.target.value })
-                  }
-                  className={inputCls}
-                />
-              </div>
-              {!editingItem && (
-                <div>
-                  <label htmlFor="s_os" className={labelCls}>
-                    Opening Stock
-                  </label>
-                  <input
-                    id="s_os"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.opening_stock}
-                    onChange={(e) =>
-                      setForm({ ...form, opening_stock: e.target.value })
-                    }
-                    className={inputCls}
-                  />
-                </div>
-              )}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-                >
-                  {loading ? "Saving..." : editingItem ? "Update" : "Create"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="border border-slate-300 px-5 py-2 rounded-lg text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
           </div>
         )}
       </div>

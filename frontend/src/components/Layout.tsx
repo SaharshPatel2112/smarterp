@@ -76,7 +76,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               MASTERS
             </p>
           )}
-          {navItem("/ledgers", "👥", "Ledger Master")}
+          {navItem("/ledgers", "👥", "Ledger")}
           {navItem("/stock-items", "📦", "Stock Items")}
 
           {open && (
