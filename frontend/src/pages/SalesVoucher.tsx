@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useCompany } from "../context/CompanyContext";
+import { generateInvoicePDF } from "../utils/generateInvoice";
 
 interface Customer {
   id: string;
@@ -77,6 +78,17 @@ export default function SalesVoucher() {
   useEffect(() => {
     fetchData();
   }, [activeCompany]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === "P") {
+        e.preventDefault();
+        if (vouchers.length > 0) handleDownloadInvoice(vouchers[0]);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [vouchers]);
 
   const selectedStock = stockItems.find((s) => s.id === selectedStockId);
 
@@ -192,6 +204,32 @@ export default function SalesVoucher() {
     setQty("");
     setRate("");
     setVoucherDate(new Date().toISOString().split("T")[0]);
+  };
+
+  const handleDownloadInvoice = async (v: any) => {
+    const customer = customers.find((c) => c.id === v.ledger_id) as any;
+
+    await generateInvoicePDF({
+      voucher_no: v.voucher_no,
+      voucher_date: v.voucher_date,
+      company_name: activeCompany?.name || "",
+      company_gstin: activeCompany?.gstin || "",
+      company_address: activeCompany?.address || "",
+      customer_name: v.ledgers?.name || "",
+      customer_gstin: customer?.gstin || "",
+      customer_phone: customer?.phone || "",
+      items: v.voucher_items.map((vi: any) => ({
+        name: vi.stock_items?.name || "",
+        unit: vi.stock_items?.unit || "",
+        qty: parseFloat(vi.qty),
+        rate: parseFloat(vi.rate),
+        gst_rate: parseFloat(vi.gst_rate),
+        amount: parseFloat(vi.line_total),
+      })),
+      subtotal: parseFloat(v.subtotal),
+      gst_amount: parseFloat(v.gst_amount),
+      total_amount: parseFloat(v.total_amount),
+    });
   };
 
   return (
@@ -466,16 +504,21 @@ export default function SalesVoucher() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  {["Voucher No.", "Date", "Customer", "Items", "Total"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="text-left px-4 py-3 text-slate-500 font-semibold text-xs"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "Voucher No.",
+                    "Date",
+                    "Customer",
+                    "Items",
+                    "Total",
+                    "",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left px-4 py-3 text-slate-500 font-semibold text-xs"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -498,6 +541,14 @@ export default function SalesVoucher() {
                     </td>
                     <td className="px-4 py-3 font-semibold">
                       ₹{parseFloat(v.total_amount).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => handleDownloadInvoice(v)}
+                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md"
+                      >
+                        PDF
+                      </button>
                     </td>
                   </tr>
                 ))}
