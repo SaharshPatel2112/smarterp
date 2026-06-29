@@ -32,12 +32,26 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "company_id and name are required." });
   }
 
+  // Check duplicate name within same company
+  const { data: existing } = await supabase
+    .from("stock_items")
+    .select("id")
+    .eq("company_id", company_id)
+    .ilike("name", name.trim())
+    .single();
+
+  if (existing) {
+    return res
+      .status(400)
+      .json({ error: `Item "${name}" already exists. Use a different name.` });
+  }
+
   const { data, error } = await supabase
     .from("stock_items")
     .insert([
       {
         company_id,
-        name,
+        name: name.trim(),
         unit: unit || "pcs",
         gst_rate: gst_rate || 0,
         purchase_price: purchase_price || 0,

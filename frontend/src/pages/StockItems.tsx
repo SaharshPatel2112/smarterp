@@ -127,7 +127,7 @@ export default function StockItems() {
   );
 
   return (
-    <div className="p-8">
+    <div className="p-8 min-h-screen bg-slate-100">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -302,7 +302,7 @@ export default function StockItems() {
               : "No stock items yet. Create one."}
           </p>
         ) : (
-          <div className="overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm w-full">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">

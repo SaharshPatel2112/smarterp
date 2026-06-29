@@ -22,5 +22,8 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 const stockItemsRouter = require("./routes/stockItems");
 app.use("/api/stock-items", stockItemsRouter);
 
-const vouchersRouter = require('./routes/vouchers');
-app.use('/api/vouchers', vouchersRouter);
+const vouchersRouter = require("./routes/vouchers");
+app.use("/api/vouchers", vouchersRouter);
+
+const reportsRouter = require("./routes/reports");
+app.use("/api/reports", reportsRouter);
