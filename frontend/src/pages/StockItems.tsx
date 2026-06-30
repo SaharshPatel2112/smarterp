@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCompany } from "../context/CompanyContext";
+import { useTableNavigation } from "../hooks/useTableNavigation";
+import { useSearchParams } from "react-router-dom";
 
 interface StockItem {
   id: string;
@@ -126,6 +128,43 @@ export default function StockItems() {
     i.name.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const { activeRow } = useTableNavigation(filtered.length);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      openCreate();
+      setSearchParams({});
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!showForm) return;
+
+      if (
+        (e.ctrlKey && e.key === "Enter") ||
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "s")
+      ) {
+        e.preventDefault();
+        const submitBtn = document.querySelector<HTMLButtonElement>(
+          'button[type="submit"]',
+        );
+        submitBtn?.click();
+      }
+
+      if (
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x") ||
+        e.key === "Escape"
+      ) {
+        e.preventDefault();
+        setShowForm(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showForm]);
   return (
     <div className="p-8 min-h-screen bg-slate-100">
       <div className="max-w-5xl mx-auto">
@@ -329,7 +368,11 @@ export default function StockItems() {
                 {filtered.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-slate-100 hover:bg-slate-50 last:border-0"
+                    className={`border-b border-slate-100 last:border-0 ${
+                      filtered.indexOf(item) === activeRow
+                        ? "bg-blue-50"
+                        : "hover:bg-slate-50"
+                    }`}
                   >
                     <td className="px-4 py-3 font-medium text-slate-700">
                       {item.name}

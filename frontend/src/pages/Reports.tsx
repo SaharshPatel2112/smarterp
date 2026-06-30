@@ -56,6 +56,7 @@ export default function Reports() {
 
   const [fromDate, setFromDate] = useState(firstOfMonth);
   const [toDate, setToDate] = useState(today);
+  const [reportSearch, setReportSearch] = useState("");
 
   const fetchStock = async () => {
     if (!activeCompany) return;
@@ -101,12 +102,29 @@ export default function Reports() {
     if (tab === "purchase") fetchPurchase();
   };
 
-  const totalStockValue = stockData.reduce((sum, i) => sum + i.stock_value, 0);
-  const totalSales = salesData.reduce(
+  const filteredStock = stockData.filter((i) =>
+    i.name.toLowerCase().includes(reportSearch.toLowerCase()),
+  );
+  const filteredSales = salesData.filter(
+    (v) =>
+      v.voucher_no.toLowerCase().includes(reportSearch.toLowerCase()) ||
+      v.ledgers?.name.toLowerCase().includes(reportSearch.toLowerCase()),
+  );
+  const filteredPurchase = purchaseData.filter(
+    (v) =>
+      v.voucher_no.toLowerCase().includes(reportSearch.toLowerCase()) ||
+      v.ledgers?.name.toLowerCase().includes(reportSearch.toLowerCase()),
+  );
+
+  const totalStockValue = filteredStock.reduce(
+    (sum, i) => sum + i.stock_value,
+    0,
+  );
+  const totalSales = filteredSales.reduce(
     (sum, v) => sum + parseFloat(String(v.total_amount)),
     0,
   );
-  const totalPurchase = purchaseData.reduce(
+  const totalPurchase = filteredPurchase.reduce(
     (sum, v) => sum + parseFloat(String(v.total_amount)),
     0,
   );
@@ -124,7 +142,6 @@ export default function Reports() {
           <h1 className="text-2xl font-bold text-slate-800">Reports</h1>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 border-b border-slate-200 mb-6">
           {tabs.map((t) => (
             <button
@@ -132,6 +149,7 @@ export default function Reports() {
               onClick={() => {
                 setTab(t.key);
                 setExpandedRow(null);
+                setReportSearch("");
               }}
               className={`px-6 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 tab === t.key
@@ -144,7 +162,6 @@ export default function Reports() {
           ))}
         </div>
 
-        {/* Date filter — only for sales and purchase */}
         {tab !== "stock" && (
           <div className="flex items-center gap-3 mb-5 bg-white border border-slate-200 rounded-xl p-4">
             <span className="text-sm text-slate-500">From</span>
@@ -172,13 +189,24 @@ export default function Reports() {
           </div>
         )}
 
+        <input
+          type="text"
+          placeholder={`Search ${tab === "stock" ? "items" : "vouchers"}...`}
+          value={reportSearch}
+          onChange={(e) => setReportSearch(e.target.value)}
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 mb-4 bg-white"
+        />
+
         {loading && <p className="text-slate-400 text-sm mb-4">Loading...</p>}
 
-        {/* Stock Summary */}
         {tab === "stock" && (
           <>
-            {stockData.length === 0 ? (
-              <p className="text-slate-400 text-sm">No stock items found.</p>
+            {filteredStock.length === 0 ? (
+              <p className="text-slate-400 text-sm">
+                {reportSearch
+                  ? "No items match your search."
+                  : "No stock items found."}
+              </p>
             ) : (
               <>
                 <div className="overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm mb-4">
@@ -204,7 +232,7 @@ export default function Reports() {
                       </tr>
                     </thead>
                     <tbody>
-                      {stockData.map((item) => (
+                      {filteredStock.map((item) => (
                         <tr
                           key={item.id}
                           className="border-b border-slate-100 hover:bg-slate-50 last:border-0"
@@ -255,12 +283,13 @@ export default function Reports() {
           </>
         )}
 
-        {/* Sales Register */}
         {tab === "sales" && (
           <>
-            {salesData.length === 0 ? (
+            {filteredSales.length === 0 ? (
               <p className="text-slate-400 text-sm">
-                No sales found for this period.
+                {reportSearch
+                  ? "No vouchers match your search."
+                  : "No sales found for this period."}
               </p>
             ) : (
               <>
@@ -288,7 +317,7 @@ export default function Reports() {
                       </tr>
                     </thead>
                     <tbody>
-                      {salesData.map((v) => (
+                      {filteredSales.map((v) => (
                         <>
                           <tr
                             key={v.id}
@@ -331,7 +360,6 @@ export default function Reports() {
                             </td>
                           </tr>
 
-                          {/* Expanded items */}
                           {expandedRow === v.id && (
                             <tr key={`${v.id}-expand`} className="bg-slate-50">
                               <td colSpan={8} className="px-6 py-3">
@@ -405,12 +433,13 @@ export default function Reports() {
           </>
         )}
 
-        {/* Purchase Register */}
         {tab === "purchase" && (
           <>
-            {purchaseData.length === 0 ? (
+            {filteredPurchase.length === 0 ? (
               <p className="text-slate-400 text-sm">
-                No purchases found for this period.
+                {reportSearch
+                  ? "No vouchers match your search."
+                  : "No purchases found for this period."}
               </p>
             ) : (
               <>
@@ -438,7 +467,7 @@ export default function Reports() {
                       </tr>
                     </thead>
                     <tbody>
-                      {purchaseData.map((v) => (
+                      {filteredPurchase.map((v) => (
                         <>
                           <tr
                             key={v.id}

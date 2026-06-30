@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCompany } from "../context/CompanyContext";
 import { generateInvoicePDF } from "../utils/generateInvoice";
+import { useSearchParams } from "react-router-dom";
 
 interface Customer {
   id: string;
@@ -50,6 +51,16 @@ export default function SalesVoucher() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      openForm();
+      setSearchParams({});
+    }
+  }, [searchParams]);
 
   const fetchData = async () => {
     if (!activeCompany) return;
@@ -79,16 +90,58 @@ export default function SalesVoucher() {
     fetchData();
   }, [activeCompany]);
 
+  const filteredVouchers = vouchers.filter(
+    (v) =>
+      v.voucher_no.toLowerCase().includes(search.toLowerCase()) ||
+      (v.ledgers?.name || "").toLowerCase().includes(search.toLowerCase()),
+  );
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "P") {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p") {
         e.preventDefault();
-        if (vouchers.length > 0) handleDownloadInvoice(vouchers[0]);
+        // Download whatever is currently at the top of the (possibly filtered) list
+        if (filteredVouchers.length > 0)
+          handleDownloadInvoice(filteredVouchers[0]);
       }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [vouchers]);
+  }, [filteredVouchers]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!showForm) return;
+
+      const tag = (e.target as HTMLElement).tagName.toLowerCase();
+
+      if (e.altKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        handleAddItem();
+        return;
+      }
+
+      if (["input", "select", "textarea"].includes(tag) && !e.ctrlKey) return;
+
+      if (
+        (e.ctrlKey && e.key === "Enter") ||
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "s")
+      ) {
+        e.preventDefault();
+        handleSubmit();
+      }
+
+      if (
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x") ||
+        e.key === "Escape"
+      ) {
+        e.preventDefault();
+        setShowForm(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showForm, selectedStockId, qty, rate, items]);
 
   const selectedStock = stockItems.find((s) => s.id === selectedStockId);
 
@@ -101,7 +154,6 @@ export default function SalesVoucher() {
     const qtyNum = parseFloat(qty);
     const stock = stockItems.find((s) => s.id === selectedStockId)!;
 
-    // Check stock availability before adding to list
     if (qtyNum > stock.current_stock) {
       setError(
         `Insufficient stock for ${stock.name}. Available: ${stock.current_stock} ${stock.unit}`,
@@ -251,7 +303,6 @@ export default function SalesVoucher() {
           </p>
         )}
 
-        {/* Sales Form */}
         {showForm && (
           <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
             <h2 className="font-bold text-slate-800 text-lg mb-5">
@@ -298,7 +349,6 @@ export default function SalesVoucher() {
               </div>
             </div>
 
-            {/* Add Item Row */}
             <div className="bg-slate-50 rounded-xl p-4 mb-4">
               <p className="text-xs font-semibold text-slate-500 mb-3">
                 ADD STOCK ITEM
@@ -367,7 +417,6 @@ export default function SalesVoucher() {
                 </div>
               </div>
 
-              {/* Live amount preview */}
               {qty && rate && (
                 <p className="text-xs text-slate-500 mt-2">
                   Amount: ₹{(parseFloat(qty) * parseFloat(rate)).toFixed(2)}
@@ -385,7 +434,6 @@ export default function SalesVoucher() {
                 </p>
               )}
 
-              {/* Stock warning */}
               {selectedStock && selectedStock.current_stock <= 0 && (
                 <p className="text-red-500 text-xs mt-2">
                   ⚠ This item is out of stock.
@@ -401,7 +449,6 @@ export default function SalesVoucher() {
               </button>
             </div>
 
-            {/* Items Table */}
             {items.length > 0 && (
               <div className="overflow-x-auto rounded-xl border border-slate-200 mb-5">
                 <table className="w-full text-sm">
@@ -458,7 +505,6 @@ export default function SalesVoucher() {
               </div>
             )}
 
-            {/* Totals */}
             {items.length > 0 && (
               <div className="flex justify-end mb-5">
                 <div className="bg-slate-50 rounded-xl p-4 w-64">
@@ -496,9 +542,20 @@ export default function SalesVoucher() {
           </div>
         )}
 
-        {/* Vouchers List */}
-        {vouchers.length === 0 ? (
-          <p className="text-slate-400 text-sm">No sales vouchers yet.</p>
+        <input
+          type="text"
+          placeholder="Search by voucher no or customer..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 mb-4 bg-white"
+        />
+
+        {filteredVouchers.length === 0 ? (
+          <p className="text-slate-400 text-sm">
+            {search
+              ? "No vouchers match your search."
+              : "No sales vouchers yet."}
+          </p>
         ) : (
           <div className="overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm">
             <table className="w-full text-sm">
@@ -522,7 +579,7 @@ export default function SalesVoucher() {
                 </tr>
               </thead>
               <tbody>
-                {vouchers.map((v) => (
+                {filteredVouchers.map((v) => (
                   <tr
                     key={v.id}
                     className="border-b border-slate-100 hover:bg-slate-50 last:border-0"

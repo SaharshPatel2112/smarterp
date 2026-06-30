@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCompany } from "../context/CompanyContext";
@@ -148,6 +148,20 @@ export default function CompanySelect() {
     setActiveCompany(company);
     navigate("/");
   };
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName.toLowerCase();
+      if (["input", "select", "textarea"].includes(tag)) return;
+
+      if (e.altKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        if (companies.length < 5) openCreate();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [companies]);
 
   return (
     <div className="min-h-screen bg-slate-100 flex items-start justify-center py-12 px-4">

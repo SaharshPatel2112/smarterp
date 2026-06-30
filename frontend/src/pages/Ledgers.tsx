@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCompany } from "../context/CompanyContext";
-
+import { useTableNavigation } from "../hooks/useTableNavigation";
+import { useSearchParams } from "react-router-dom";
 interface Ledger {
   id: string;
   type: "customer" | "supplier";
@@ -75,6 +76,19 @@ export default function Ledgers() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const newParam = searchParams.get("new");
+    if (newParam === "customer" || newParam === "supplier") {
+      setEditingLedger(null);
+      setForm({ ...emptyForm, under: newParam });
+      setError("");
+      setShowForm(true);
+      setSearchParams({});
+    }
+  }, [searchParams]);
 
   const fetchLedgers = async () => {
     if (!activeCompany) return;
@@ -185,6 +199,37 @@ export default function Ledgers() {
       l.name.toLowerCase().includes(search.toLowerCase()) ||
       (l.phone && l.phone.includes(search)),
   );
+
+  const { activeRow } = useTableNavigation(filtered.length, (index) =>
+    setSelectedLedger(filtered[index]),
+  );
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!showForm) return;
+
+      if (
+        (e.ctrlKey && e.key === "Enter") ||
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "s")
+      ) {
+        e.preventDefault();
+        const submitBtn = document.querySelector<HTMLButtonElement>(
+          'button[type="submit"]',
+        );
+        submitBtn?.click();
+      }
+
+      if (
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x") ||
+        e.key === "Escape"
+      ) {
+        e.preventDefault();
+        setShowForm(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showForm]);
 
   return (
     <div className="p-8 min-h-screen bg-slate-100">
@@ -421,7 +466,11 @@ export default function Ledgers() {
                 {filtered.map((l) => (
                   <tr
                     key={l.id}
-                    className="border-b border-slate-100 hover:bg-slate-50 last:border-0"
+                    className={`border-b border-slate-100 last:border-0 cursor-pointer ${
+                      filtered.indexOf(l) === activeRow
+                        ? "bg-blue-50"
+                        : "hover:bg-slate-50"
+                    }`}
                   >
                     <td className="px-4 py-3">
                       <button

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useCompany } from "../context/CompanyContext";
+import { useSearchParams } from "react-router-dom";
 
 interface Supplier {
   id: string;
@@ -48,6 +49,15 @@ export default function PurchaseVoucher() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      openForm();
+      setSearchParams({});
+    }
+  }, [searchParams]);
 
   const fetchData = async () => {
     if (!activeCompany) return;
@@ -77,6 +87,12 @@ export default function PurchaseVoucher() {
     fetchData();
   }, [activeCompany]);
 
+  const filteredVouchers = vouchers.filter(
+    (v) =>
+      v.voucher_no.toLowerCase().includes(search.toLowerCase()) ||
+      (v.ledgers?.name || "").toLowerCase().includes(search.toLowerCase()),
+  );
+
   const selectedStock = stockItems.find((s) => s.id === selectedStockId);
 
   const handleAddItem = () => {
@@ -89,7 +105,6 @@ export default function PurchaseVoucher() {
     const rateNum = parseFloat(rate);
     const stock = stockItems.find((s) => s.id === selectedStockId)!;
 
-    // Check if item already added
     const exists = items.find((i) => i.stock_item_id === selectedStockId);
     if (exists) {
       setError("Item already added. Edit quantity in the list below.");
@@ -184,6 +199,41 @@ export default function PurchaseVoucher() {
     setVoucherDate(new Date().toISOString().split("T")[0]);
   };
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!showForm) return;
+
+      const tag = (e.target as HTMLElement).tagName.toLowerCase();
+
+      // Alt+C — Add to Cart (only fires when form is open, works even while focused on inputs)
+      if (e.altKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        handleAddItem();
+        return;
+      }
+
+      if (["input", "select", "textarea"].includes(tag) && !e.ctrlKey) return;
+
+      if (
+        (e.ctrlKey && e.key === "Enter") ||
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "s")
+      ) {
+        e.preventDefault();
+        handleSubmit();
+      }
+
+      if (
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x") ||
+        e.key === "Escape"
+      ) {
+        e.preventDefault();
+        setShowForm(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showForm, selectedStockId, qty, rate, items]);
+
   return (
     <div className="p-8 min-h-screen bg-slate-100">
       <div className="max-w-5xl mx-auto">
@@ -205,7 +255,6 @@ export default function PurchaseVoucher() {
           </p>
         )}
 
-        {/* Purchase Form */}
         {showForm && (
           <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
             <h2 className="font-bold text-slate-800 text-lg mb-5">
@@ -252,7 +301,6 @@ export default function PurchaseVoucher() {
               </div>
             </div>
 
-            {/* Add Item Row */}
             <div className="bg-slate-50 rounded-xl p-4 mb-4">
               <p className="text-xs font-semibold text-slate-500 mb-3">
                 ADD STOCK ITEM
@@ -314,7 +362,6 @@ export default function PurchaseVoucher() {
                 </div>
               </div>
 
-              {/* Live amount preview */}
               {qty && rate && (
                 <p className="text-xs text-slate-500 mt-2">
                   Amount: ₹{(parseFloat(qty) * parseFloat(rate)).toFixed(2)}
@@ -341,7 +388,6 @@ export default function PurchaseVoucher() {
               </button>
             </div>
 
-            {/* Items Table */}
             {items.length > 0 && (
               <div className="overflow-x-auto rounded-xl border border-slate-200 mb-5">
                 <table className="w-full text-sm">
@@ -398,7 +444,6 @@ export default function PurchaseVoucher() {
               </div>
             )}
 
-            {/* Totals */}
             {items.length > 0 && (
               <div className="flex justify-end mb-5">
                 <div className="bg-slate-50 rounded-xl p-4 w-64">
@@ -436,9 +481,20 @@ export default function PurchaseVoucher() {
           </div>
         )}
 
-        {/* Vouchers List */}
-        {vouchers.length === 0 ? (
-          <p className="text-slate-400 text-sm">No purchase vouchers yet.</p>
+        <input
+          type="text"
+          placeholder="Search by voucher no or supplier..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 mb-4 bg-white"
+        />
+
+        {filteredVouchers.length === 0 ? (
+          <p className="text-slate-400 text-sm">
+            {search
+              ? "No vouchers match your search."
+              : "No purchase vouchers yet."}
+          </p>
         ) : (
           <div className="overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm">
             <table className="w-full text-sm">
@@ -457,7 +513,7 @@ export default function PurchaseVoucher() {
                 </tr>
               </thead>
               <tbody>
-                {vouchers.map((v) => (
+                {filteredVouchers.map((v) => (
                   <tr
                     key={v.id}
                     className="border-b border-slate-100 hover:bg-slate-50 last:border-0"

@@ -9,6 +9,12 @@ import Layout from "./components/Layout";
 import PurchaseVoucher from "./pages/PurchaseVoucher";
 import SalesVoucher from "./pages/SalesVoucher";
 import Reports from "./pages/Reports";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+
+function KeyboardShortcuts() {
+  useKeyboardShortcuts();
+  return null;
+}
 
 function App() {
   const { session, loading } = useAuth();
@@ -42,6 +48,7 @@ function App() {
   return (
     <BrowserRouter>
       <Layout>
+        <KeyboardShortcuts />
         <Routes>
           <Route path="/" element={<Navigate to="/ledgers" />} />
           <Route path="/ledgers" element={<Ledgers />} />
