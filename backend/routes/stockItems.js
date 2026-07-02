@@ -38,12 +38,13 @@ router.post("/", async (req, res) => {
     .select("id")
     .eq("company_id", company_id)
     .ilike("name", name.trim())
+    .eq("unit", unit || "pcs")
     .single();
 
   if (existing) {
-    return res
-      .status(400)
-      .json({ error: `Item "${name}" already exists. Use a different name.` });
+    return res.status(400).json({
+      error: `Item "${name}" with unit "${unit || "pcs"}" already exists. Same name is allowed only with a different unit.`,
+    });
   }
 
   const { data, error } = await supabase
@@ -86,6 +87,19 @@ router.put("/:id", async (req, res) => {
 // Delete stock item
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
+
+  const { count, error: countError } = await supabase
+    .from("voucher_items")
+    .select("*", { count: "exact", head: true })
+    .eq("stock_item_id", id);
+
+  if (countError) return res.status(400).json({ error: countError.message });
+
+  if (count > 0) {
+    return res.status(400).json({
+      error: `Cannot delete — this item has been used in ${count} voucher(s).`,
+    });
+  }
 
   const { error } = await supabase.from("stock_items").delete().eq("id", id);
 

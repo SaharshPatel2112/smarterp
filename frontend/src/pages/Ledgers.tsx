@@ -185,10 +185,11 @@ export default function Ledgers() {
     const res = await fetch(`http://localhost:5000/api/ledgers/${id}`, {
       method: "DELETE",
     });
+    const data = await res.json();
     if (res.ok) {
       fetchLedgers();
       setSelectedLedger(null);
-    }
+    } else alert(data.error || "Could not delete ledger.");
   };
 
   const underLabel = (type: string) =>
@@ -206,6 +207,18 @@ export default function Ledgers() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Close detail panel with Esc or Ctrl+Shift+X
+      if (
+        selectedLedger &&
+        (e.key === "Escape" ||
+          (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x"))
+      ) {
+        e.preventDefault();
+        setSelectedLedger(null);
+        return;
+      }
+
+      // Form shortcuts — only when form is open
       if (!showForm) return;
 
       if (
@@ -227,9 +240,10 @@ export default function Ledgers() {
         setShowForm(false);
       }
     };
+
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [showForm]);
+  }, [showForm, selectedLedger]);
 
   return (
     <div className="p-8 min-h-screen bg-slate-100">

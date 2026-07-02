@@ -121,7 +121,9 @@ export default function StockItems() {
     const res = await fetch(`http://localhost:5000/api/stock-items/${id}`, {
       method: "DELETE",
     });
+    const data = await res.json();
     if (res.ok) fetchItems();
+    else alert(data.error || "Could not delete item.");
   };
 
   const filtered = items.filter((i) =>

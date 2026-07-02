@@ -72,6 +72,19 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
 
+  const { count, error: countError } = await supabase
+    .from("vouchers")
+    .select("*", { count: "exact", head: true })
+    .eq("ledger_id", id);
+
+  if (countError) return res.status(400).json({ error: countError.message });
+
+  if (count > 0) {
+    return res.status(400).json({
+      error: `Cannot delete — this ledger has ${count} voucher(s) linked to it.`,
+    });
+  }
+
   const { error } = await supabase.from("ledgers").delete().eq("id", id);
 
   if (error) return res.status(400).json({ error: error.message });

@@ -133,7 +133,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             SHORTCUTS
           </p>
           {[
-            ["─────",],
+            ["─────"],
             ["Alt+D", "Dashboard"],
             ["Alt+L", "Ledger"],
             ["Alt+I", "Stock Items"],
@@ -182,7 +182,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             className="fixed inset-0 bg-black/30 z-50"
             onClick={() => setShowHelp(false)}
           />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 p-6 w-96">
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 p-6 w-[480px]">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-slate-800 text-lg">
                 Keyboard Shortcuts
@@ -194,7 +194,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 ×
               </button>
             </div>
-            <div className="flex flex-col gap-2 text-sm">
+            <div className="flex flex-col gap-2 text-sm max-h-[32rem] overflow-y-auto pr-1">
               {[
                 ["Alt + D", "Dashboard"],
                 ["Alt + L", "Go to Ledger"],
